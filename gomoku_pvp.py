@@ -1,8 +1,6 @@
 import colorama
 import os
 
-from gomoku_ai_1 import *
-
 def create_game_board(s=15):
     if s < 5:
         s = 5

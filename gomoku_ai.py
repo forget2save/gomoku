@@ -1,14 +1,21 @@
 #coding=gbk
 #2020/7/23
 import numpy as np
-import colorama
 import os
+from pygame import *
+from sys import exit
+from pygame.locals import *
+import random
 
+SCREEN_SIZE = (800,600)
+WHITE = (255,255,255)
+BLACK = (0,0,0)
 INF = 10000
 
 SCORE = [[0,5,25,125,1000,INF,1000,125,25,5],
         [0,0,5,25,125,INF,125,25,5,0],
         [0,0,1,5,25,INF,25,5,1,0]]
+
 
 def scoreit(l):
     score = 0
@@ -121,41 +128,46 @@ class node:
 
 class gomoku:
     def __init__(self):
-        colorama.init()
+        init()
+        self.screen = display.set_mode(SCREEN_SIZE,0,32)
+        display.set_caption('Gomoku')
+        self.background = image.load('board.jpg')
+        self.background = transform.scale(self.background,(600,600))
         self.game_board = dummy_gameboard()
         self.side = 1
         self.layer = 3
         self.golden = []
         self.sliver = []
         self.tree = None
+        self.sit = 0
 
     def display(self):
-        os.system('cls')
-        print(self.evaluate())
-        print(f'  ',end='')
-        for i in range(15):
-            if i<=9:
-                print(f'  {i} ',end='')
-            else:
-                print(f' {i} ',end='')
-        print('')
-        for i, row in enumerate(self.game_board[2:17,2:17]):
-            colored_row = ""
-            for item in row:
-                if item == 0:
-                    colored_row += colorama.Fore.WHITE + "  + " + colorama.Style.RESET_ALL
-                elif item == 1:
-                    colored_row += colorama.Fore.GREEN + "  X " + colorama.Style.RESET_ALL
-                elif item  == 2:
-                    colored_row += colorama.Fore.MAGENTA + "  O " + colorama.Style.RESET_ALL
-            print('{:2d}'.format(i),end='')
-            print(colored_row)
+        self.screen.fill(WHITE)
+        self.screen.blit(self.background,(0,0))
+        for i in range(2,17):
+            for j in range(2,17):
+                if self.game_board[i][j] == 1:
+                    draw.circle(self.screen,BLACK,(40*j-60,40*i-60),16)
+                elif self.game_board[i][j] == 2:
+                    draw.circle(self.screen,WHITE,(40*j-60,40*i-60),16)
+        myCfont = font.SysFont('stfangsong',20)
+        text = myCfont.render(f'当前局面分数：{self.sit}',True,BLACK)
+        self.screen.blit(text,(620,20))
+        display.update()
 
     def set_piece(self,row,col):
+        if self.game_board[row,col] > 0:
+            return False
         self.game_board[row][col] = self.side
+        return True
     
     def pick_piece(self,row,col):
         self.game_board[row][col] = 0
+
+    def get_pos(self,pos):
+        if abs(pos[0] % 40 - 20) > 15 or abs(pos[1] % 40 - 20) > 15 or pos[0] > 615:
+            return False
+        return self.set_piece(round((pos[1]-20)/40)+2,round((pos[0]-20)/40)+2)
 
     def flip_side(self):
         self.side = (2,1)[self.side-1]
@@ -230,32 +242,63 @@ class gomoku:
 
 if __name__ == "__main__":
     G = gomoku()
-    player_side = eval(input('which side: 1 or 2?'))
-    if player_side == 2:
+    flag = random.choice([True,False])
+    if flag:
         G.set_piece(7+2,7+2)
+        G.sit = G.evaluate()
         G.flip_side()
+        flag = False
     while True:
+        for e in event.get():
+            if e.type==QUIT or (e.type==KEYDOWN and e.key==K_ESCAPE):
+                exit()
+            elif e.type==MOUSEBUTTONDOWN and e.button==BUTTON_LEFT and not flag:
+                if G.get_pos(e.pos):
+                    G.sit = G.evaluate()
+                    print(G.sit)
+                    if abs(G.sit) > INF/2:
+                        print('Win!!!')
+                        exit()
+                    G.flip_side()
+                    flag = True
         G.display()
-        print('It is Player\'s turn!')
-        try:
-            r = eval(input('which row?'))
-            c = eval(input('which column?'))
-        except:
-            os.system('cls')
-            print('ERROR: Invalid inputs!!!')
-            if input('exit?(e)') == 'e':
-                break
-            continue
-        G.set_piece(r+2,c+2)
-        if abs(G.evaluate()) > INF/2:
-            print('Win!!!')
-            break
-        G.flip_side()
-        G.display()
-        G.aiplaying()
-        if abs(G.evaluate()) > INF/2:
-            print('Lose~~')
-            break
-        G.flip_side()
+        if flag:
+            G.aiplaying()
+            G.sit = G.evaluate()
+            print(G.sit)
+            if abs(G.sit) > INF/2:
+                print('Lose~~')
+                exit()
+            G.flip_side()
+            flag = False
+        
+    
+    # player_side = eval(input('which side: 1 or 2?'))
+    # if player_side == 2:
+    #     G.set_piece(7+2,7+2)
+    #     G.flip_side()
+    # while True:
+    #     G.display()
+    #     print('It is Player\'s turn!')
+    #     try:
+    #         r = eval(input('which row?'))
+    #         c = eval(input('which column?'))
+    #     except:
+    #         os.system('cls')
+    #         print('ERROR: Invalid inputs!!!')
+    #         if input('exit?(e)') == 'e':
+    #             break
+    #         continue
+    #     G.set_piece(r+2,c+2)
+    #     if abs(G.evaluate()) > INF/2:
+    #         print('Win!!!')
+    #         break
+    #     G.flip_side()
+    #     G.display()
+    #     G.aiplaying()
+    #     if abs(G.evaluate()) > INF/2:
+    #         print('Lose~~')
+    #         break
+    #     G.flip_side()
 
         

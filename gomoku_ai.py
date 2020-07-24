@@ -283,33 +283,3 @@ if __name__ == "__main__":
             G.flip_side()
             flag = False
         
-    
-    # player_side = eval(input('which side: 1 or 2?'))
-    # if player_side == 2:
-    #     G.set_piece(7+2,7+2)
-    #     G.flip_side()
-    # while True:
-    #     G.display()
-    #     print('It is Player\'s turn!')
-    #     try:
-    #         r = eval(input('which row?'))
-    #         c = eval(input('which column?'))
-    #     except:
-    #         os.system('cls')
-    #         print('ERROR: Invalid inputs!!!')
-    #         if input('exit?(e)') == 'e':
-    #             break
-    #         continue
-    #     G.set_piece(r+2,c+2)
-    #     if abs(G.evaluate()) > INF/2:
-    #         print('Win!!!')
-    #         break
-    #     G.flip_side()
-    #     G.display()
-    #     G.aiplaying()
-    #     if abs(G.evaluate()) > INF/2:
-    #         print('Lose~~')
-    #         break
-    #     G.flip_side()
-
-        

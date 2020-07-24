@@ -6,16 +6,19 @@ from pygame import *
 from sys import exit
 from pygame.locals import *
 import random
+import threading
 
 SCREEN_SIZE = (800,600)
 WHITE = (255,255,255)
 BLACK = (0,0,0)
+RED = (255,0,0)
+GREEN = (0,255,0)
+BLUE = (0,0,255)
 INF = 10000
 
 SCORE = [[0,5,25,125,1000,INF,1000,125,25,5],
         [0,0,5,25,125,INF,125,25,5,0],
         [0,0,1,5,25,INF,25,5,1,0]]
-
 
 def scoreit(l):
     score = 0
@@ -139,31 +142,60 @@ class node:
 class gomoku:
     def __init__(self):
         init()
+        font.init()
+        self.myfont = font.SysFont('consola',30)
         self.screen = display.set_mode(SCREEN_SIZE,0,32)
         display.set_caption('Gomoku')
         self.background = image.load('board.jpg')
         self.background = transform.scale(self.background,(600,600))
         self.game_board = dummy_gameboard()
+        self.display_board = np.copy(self.game_board)
         self.side = 1
         self.layer = 3
         self.golden = []
         self.sliver = []
         self.tree = None
         self.sit = 0
+        self.show = True
+        self.computerTime = 0
+        self.playerTime = 0
+        self.last_move = [-1,-1]
+
+    def countTime(self):
+        while self.show:
+            time.wait(100)
+            threadingLock.acquire()
+            if flag:
+                self.computerTime += 0.1
+            else:
+                self.playerTime += 0.1
+            threadingLock.release()
 
     def display(self):
-        self.screen.fill(WHITE)
-        self.screen.blit(self.background,(0,0))
-        for i in range(2,17):
-            for j in range(2,17):
-                if self.game_board[i][j] == 1:
-                    draw.circle(self.screen,BLACK,(40*j-60,40*i-60),16)
-                elif self.game_board[i][j] == 2:
-                    draw.circle(self.screen,WHITE,(40*j-60,40*i-60),16)
-        # myCfont = font.SysFont('stfangsong',20)
-        # text = myCfont.render(f'当前局面分数：{self.sit}',True,BLACK)
-        # self.screen.blit(text,(620,20))
-        display.update()
+        while self.show:
+            self.screen.fill(WHITE)
+            self.screen.blit(self.background,(0,0))
+            threadingLock.acquire()
+            for i in range(2,17):
+                for j in range(2,17):
+                    if self.display_board[i][j] == 1:
+                        draw.circle(self.screen,BLACK,(40*j-60,40*i-60),16)
+                    elif self.display_board[i][j] == 2:
+                        draw.circle(self.screen,WHITE,(40*j-60,40*i-60),16)
+            text = self.myfont.render(f'Computer:{self.computerTime:.1f}s',True,BLUE)
+            self.screen.blit(text,(620,200))
+            text = self.myfont.render(f'Player:{self.playerTime:.1f}s',True,GREEN)
+            self.screen.blit(text,(620,400))
+            if self.last_move[0] != -1:
+                draw.line(self.screen,RED,
+                          (40*self.last_move[1]-60,40*self.last_move[0]-65),
+                          (40*self.last_move[1]-60,40*self.last_move[0]-55))
+                draw.line(self.screen,RED,
+                          (40*self.last_move[1]-65,40*self.last_move[0]-60),
+                          (40*self.last_move[1]-55,40*self.last_move[0]-60))
+            threadingLock.release()
+            Time.tick(20)
+            display.update()
 
     def set_piece(self,row,col):
         if self.game_board[row,col] > 0:
@@ -171,6 +203,10 @@ class gomoku:
         self.game_board[row][col] = self.side
         return True
     
+    def set_display_piece(self,row,col):
+        self.display_board[row][col] = self.side
+        self.last_move = [row,col]
+
     def pick_piece(self,row,col):
         self.game_board[row][col] = 0
 
@@ -249,38 +285,53 @@ class gomoku:
         self.flip_side()
         score,move = self.tree.alpha_beta_pruning(self.tree.v,self.tree.a,self.tree.b,self,self.layer)
         self.set_piece(self.tree.nextmove[0],self.tree.nextmove[1])
+        self.set_display_piece(self.tree.nextmove[0],self.tree.nextmove[1])
 
 if __name__ == "__main__":
     G = gomoku()
     flag = random.choice([True,False])
     if flag:
         G.set_piece(7+2,7+2)
+        G.display_board = np.copy(G.game_board)
         G.sit = G.evaluate()
         G.flip_side()
         flag = False
+    threadingLock = threading.Lock()
+    Time = time.Clock()
+    t1 = threading.Thread(target=G.display)
+    t2 = threading.Thread(target=G.countTime)
+    t1.setDaemon(True)
+    t2.setDaemon(True)
+    t1.start()
+    t2.start()
     while True:
         for e in event.get():
             if e.type==QUIT or (e.type==KEYDOWN and e.key==K_ESCAPE):
                 exit()
             elif e.type==MOUSEBUTTONDOWN and e.button==BUTTON_LEFT and not flag:
                 if G.get_pos(e.pos):
+                    G.set_display_piece(round((e.pos[1]-20)/40)+2,round((e.pos[0]-20)/40)+2)
                     G.sit = G.evaluate()
                     print(G.sit)
                     if abs(G.sit) > INF/2:
                         print('Win!!!')
-                        G.display()
+                        # G.display()
+                        time.wait(1000)
+                        G.show = False
                         image.save(G.screen,'win.png')
                         exit()
                     G.flip_side()
                     flag = True
-        G.display()
+        # G.display()
         if flag:
             G.aiplaying()
             G.sit = G.evaluate()
             print(G.sit)
             if abs(G.sit) > INF/2:
                 print('Lose~~')
-                G.display()
+                # G.display()
+                time.wait(1000)
+                G.show = False
                 image.save(G.screen,'lose.png')
                 exit()
             G.flip_side()

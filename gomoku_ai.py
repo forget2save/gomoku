@@ -92,7 +92,12 @@ class node:
     def alpha_beta_pruning(self,v,a,b,g,layer):
         if self.move[0] != -1:
             g.flip_side()
-            g.set_piece(self.move[0],self.move[1]) 
+            g.set_piece(self.move[0],self.move[1])
+        cur_v = g.evaluate()
+        if (self.max_min and cur_v < -500) or (not self.max_min and cur_v > 500):
+            g.flip_side()
+            g.pick_piece(self.move[0],self.move[1])
+            return [cur_v,self.move]
         self.v = v
         self.a = a
         self.b = b
@@ -100,6 +105,7 @@ class node:
             self.v = g.evaluate()
             g.flip_side()
             g.pick_piece(self.move[0],self.move[1])
+            # print(layer,self.v,self.a,self.b,'return')
             return [self.v,self.move]
         else:
             g.find_pos()
@@ -107,23 +113,28 @@ class node:
                 self.children.append(node(not self.max_min,move=step))
             for head_node in self.children:
                 if self.max_min:
-                    tmpv,tmpm = head_node.alpha_beta_pruning(head_node.v,head_node.a,head_node.b,g,layer-1)
+                    tmpv,tmpm = head_node.alpha_beta_pruning(head_node.v,self.a,self.b,g,layer-1)
                     if tmpv > self.v:
                         self.nextmove = tmpm
                         self.v = tmpv
                         self.a = self.v
-                    if self.a > self.b:
+                        # print(layer,self.v,self.a,self.b,'modify')
+                    if self.a > self.b or self.v > 500:
+                        print('pruning!!!')
                         break
                 else:
-                    tmpv,tmpm = head_node.alpha_beta_pruning(head_node.v,head_node.a,head_node.b,g,layer-1)
+                    tmpv,tmpm = head_node.alpha_beta_pruning(head_node.v,self.a,self.b,g,layer-1)
                     if tmpv < self.v:
                         self.nextmove = tmpm
                         self.v = tmpv
                         self.b = self.v
-                    if self.a > self.b:
+                        # print(layer,self.v,self.a,self.b,'modify')
+                    if self.a > self.b or self.v < -500:
+                        print('pruning!!!')
                         break
         g.flip_side()
         g.pick_piece(self.move[0],self.move[1])
+        # print(layer,self.v,self.a,self.b,'return')
         return [self.v,self.move]
 
 class gomoku:
@@ -135,7 +146,7 @@ class gomoku:
         self.background = transform.scale(self.background,(600,600))
         self.game_board = dummy_gameboard()
         self.side = 1
-        self.layer = 3
+        self.layer = 4
         self.golden = []
         self.sliver = []
         self.tree = None
@@ -150,9 +161,9 @@ class gomoku:
                     draw.circle(self.screen,BLACK,(40*j-60,40*i-60),16)
                 elif self.game_board[i][j] == 2:
                     draw.circle(self.screen,WHITE,(40*j-60,40*i-60),16)
-        myCfont = font.SysFont('stfangsong',20)
-        text = myCfont.render(f'当前局面分数：{self.sit}',True,BLACK)
-        self.screen.blit(text,(620,20))
+        # myCfont = font.SysFont('stfangsong',20)
+        # text = myCfont.render(f'当前局面分数：{self.sit}',True,BLACK)
+        # self.screen.blit(text,(620,20))
         display.update()
 
     def set_piece(self,row,col):

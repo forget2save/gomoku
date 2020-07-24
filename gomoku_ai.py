@@ -315,21 +315,18 @@ if __name__ == "__main__":
                     print(G.sit)
                     if abs(G.sit) > INF/2:
                         print('Win!!!')
-                        # G.display()
                         time.wait(1000)
                         G.show = False
                         image.save(G.screen,'win.png')
                         exit()
                     G.flip_side()
                     flag = True
-        # G.display()
         if flag:
             G.aiplaying()
             G.sit = G.evaluate()
             print(G.sit)
             if abs(G.sit) > INF/2:
                 print('Lose~~')
-                # G.display()
                 time.wait(1000)
                 G.show = False
                 image.save(G.screen,'lose.png')

@@ -102,11 +102,10 @@ class node:
         self.a = a
         self.b = b
         if layer == 1:
-            self.v = g.evaluate()
             g.flip_side()
             g.pick_piece(self.move[0],self.move[1])
             # print(layer,self.v,self.a,self.b,'return')
-            return [self.v,self.move]
+            return [cur_v,self.move]
         else:
             g.find_pos()
             for step in g.golden:
@@ -120,7 +119,7 @@ class node:
                         self.a = self.v
                         # print(layer,self.v,self.a,self.b,'modify')
                     if self.a > self.b or self.v > 500:
-                        print('pruning!!!')
+                        # print('pruning!!!')
                         break
                 else:
                     tmpv,tmpm = head_node.alpha_beta_pruning(head_node.v,self.a,self.b,g,layer-1)
@@ -130,7 +129,7 @@ class node:
                         self.b = self.v
                         # print(layer,self.v,self.a,self.b,'modify')
                     if self.a > self.b or self.v < -500:
-                        print('pruning!!!')
+                        # print('pruning!!!')
                         break
         g.flip_side()
         g.pick_piece(self.move[0],self.move[1])
@@ -146,7 +145,7 @@ class gomoku:
         self.background = transform.scale(self.background,(600,600))
         self.game_board = dummy_gameboard()
         self.side = 1
-        self.layer = 4
+        self.layer = 3
         self.golden = []
         self.sliver = []
         self.tree = None
@@ -269,6 +268,8 @@ if __name__ == "__main__":
                     print(G.sit)
                     if abs(G.sit) > INF/2:
                         print('Win!!!')
+                        G.display()
+                        image.save(G.screen,'win.png')
                         exit()
                     G.flip_side()
                     flag = True
@@ -279,6 +280,8 @@ if __name__ == "__main__":
             print(G.sit)
             if abs(G.sit) > INF/2:
                 print('Lose~~')
+                G.display()
+                image.save(G.screen,'lose.png')
                 exit()
             G.flip_side()
             flag = False
